@@ -22,7 +22,9 @@ kubectl cluster-info
 ```
 
 ```
+minikube stop
 ```
+
 ### おまけ
 
 ```
