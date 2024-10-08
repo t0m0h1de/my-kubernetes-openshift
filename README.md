@@ -21,9 +21,34 @@ minikube start
 kubectl cluster-info
 ```
 
+クラスターを停止させたい場合は以下のコマンドで止める。
+
 ```
 minikube stop
 ```
+
+### Kubernetesの基本オブジェクト
+
+* Pod
+* Service
+* Volume
+* Namespace
+
+### Podハンズオン
+
+### Serviceハンズオン
+
+### KubernetesのAdditionalなオブジェクト
+
+* Deployment
+* ReplicaSet
+* Job
+* DaemonSet
+* StatefulSet
+
+### Deploymentハンズオン
+
+### ReplicaSetハンズオン
 
 ### Contextの切り替え
 
@@ -115,6 +140,8 @@ kubectl config get-contexts
 minikube stop -p second-mkube
 minikube delete -p second-mkube
 ```
+
+TODO: kubernetes-labへの接続情報を扱うセクションを追加する
 
 ### kubernetesのシステムコンポーネント
 
