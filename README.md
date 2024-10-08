@@ -25,7 +25,98 @@ kubectl cluster-info
 minikube stop
 ```
 
-### おまけ
+### Contextの切り替え
+
+minikubeで異なるプロファイルを作成したり、minikube以外のKubernetesクラスターに接続するには、Contextを切り替える必要がある。
+
+ここでは例として、以下のようにminikubeプロファイルを作成し、切り替える。
+
+minikubeプロファイルの一覧は以下のコマンドで確認できる。
+
+```
+minikube profile list
+```
+
+kubectl側のContextの一覧は以下のコマンドで確認できる。
+
+```
+kubectl config get-contexts
+```
+
+現在のプロファイルの確認は`minikube`コマンドまたは`kubectl`コマンドで行える。
+
+`minikube`コマンドを用いる方法
+
+```
+minikube profile
+```
+
+`kubectl`コマンドを用いる方法
+
+```
+kubectl config current-context
+```
+
+次に、以下のコマンドで新規のプロファイルを作成する。
+
+`second-mkube`が新しく作成するプロファイル名
+
+```
+minikube start -p second-mkube
+```
+
+プロファイルを新規作成すると、自動的に現在のContextが切り替わる。
+
+以下のコマンドでkubectl側での現在のContextが切り替わっていることが確認できる。
+
+```
+# 現在のContextが`second-mkube`になっていることを確認
+kubectl config current-context
+
+# Context一覧で`second-mkube`が新規作成されていることを確認
+kubectl config get-contexts
+```
+
+また、同様に以下のコマンドでminikube側のプロファイルも切り替わっていることが確認できる。
+
+```
+# 現在のプロファイルが`second-mkube`に変更されていることを確認
+minikube profile
+
+# プロファイル一覧で`second-mkube`が新規作成されていることを確認
+minikube profile list
+```
+
+ここで、以下のコマンドでkubectl側のContextを`minikube`に切り替えてみる。
+
+```
+kubectl config use-context minikube
+```
+
+以下のコマンドでminikube, kubectlの両方でプロファイルとContextが切り替えられていることが確認できる。
+
+```
+# 現在のプロファイルが`minikube`に変更されていることを確認
+minikube profile
+
+# プロファイル一覧で`minikube`が新規作成されていることを確認
+minikube profile list
+
+# 現在のContextが`minikube`になっていることを確認
+kubectl config current-context
+
+# Context一覧で`minikube`が新規作成されていることを確認
+kubectl config get-contexts
+```
+
+確認できたら、以下のコマンドで`second-mkube`を削除する。
+
+```
+minikube stop -p second-mkube
+minikube delete -p second-mkube
+```
+
+### kubernetesのシステムコンポーネント
 
 ```
 kubectl get componentstatuses
@@ -178,4 +269,12 @@ kubectl get service kube-dns -n kube-system
 ```
 NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
 kube-dns   ClusterIP   10.96.0.10   <none>        53/UDP,53/TCP,9153/TCP   10d
+```
+
+### Minikubeのadditionalな使い方
+
+* kubernetesのバージョンを指定して、新規minikubeプロファイルを作成する
+
+```
+minikube start -p 新規プロファイル名 --kubernetes-version=v1.xx.x
 ```
