@@ -34,7 +34,247 @@ minikube stop
 * Volume
 * Namespace
 
+###　アプリのデプロイ
+
+以下でminikube上にアプリを作成する。
+
+`kubectl create deploy`コマンドで新しいアプリを作成してみる。
+
+```
+kubectl create deploy my-first-app --image=localhost/rust-web-sample
+```
+
+```
+deployment.apps/my-first-app created
+```
+
+TODO: `--image=localhost/rust-web-sample`をgcrに変更
+
+ここで`kubectl get all`コマンドを実行すると、以下のようにpodやdeployment、replicasetが作成されていることがわかる。
+
+```
+NAME                               READY   STATUS         RESTARTS   AGE
+pod/my-first-app-544d4dcb8-s7fzg   0/1     ErrImagePull   0          9s
+
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/my-first-app   0/1     1            0           9s
+
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/my-first-app-544d4dcb8   1         1         0       9s
+```
+
 ### Podハンズオン
+
+一番簡単にPodを作成する方法として、`kubectl run`コマンドを用いる方法がある。
+
+以下の例では、rust製のサンプルwebアプリ[https://github.com/t0m0h1de/rust-webapp-sample](https://github.com/t0m0h1de/rust-webapp-sample)のPodを作成している。
+
+```
+kubectl run rust-webapp --image=ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+```
+
+以下のコマンドで作成されたPodを確認する。
+
+```
+kubectl get pods
+```
+
+Note: `get pods`としているが、`get pod`としても同様な動作ととなる。
+
+出力は以下のようになる。
+
+```
+NAME          READY   STATUS    RESTARTS   AGE
+rust-webapp   1/1     Running   0          35s
+```
+
+Podの動作を確認するために、以下のコマンドでポートフォワードを行い、ローカルから8080ポートでアクセスしてみる。
+
+```
+kubectl port-forward pod/rust-webapp 8080:8000
+```
+
+この状態でブラウザから[http://localhost:8080](http://localhost:8080)にアクセスすると"Sample Web Page"という文字列が表示されることが確認できる。
+
+Note: `pod/rust-webapp`という表記になっているが、`pod rust-webapp`としても同様の動作となる
+
+このとき、Pod自体のログは以下のコマンドで確認することができる。
+
+```
+kubectl logs pod/rust-webapp
+```
+
+ログを見るとPod自体は8000ポートでリッスンしていることがわかる。
+
+Note: ログをリアルタイムに確認したいときには`kubectl logs -f pod/rust-webapp`とする
+
+Note: `logs`コマンドでは`pod rust-webapp`とするとエラーとなる。
+
+また、`kubectl describe pod/rust-webapp`コマンドでPodが作成された際の記録等のより詳細な情報が確認できる。
+
+TODO: describeコマンドで確認できる情報の説明を足す。
+
+また、`kubecl get`コマンドで作成されたPodのmanifestが確認できる。
+
+```
+kubectl get pod/rust-webapp -o yaml
+```
+
+`-o yaml`がyamlファイルとしてmanifestを取得することを指定している。
+
+Note: `-o yaml`は`-oyaml`としても同様の動作となる。
+
+出力は以下のようになる。
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2024-10-10T02:18:37Z"
+  labels:
+    run: rust-webapp
+  name: rust-webapp
+  namespace: default
+  resourceVersion: "73080"
+  uid: 50c87b4d-0f7d-4d77-854a-7b763c0e3812
+spec:
+  containers:
+  - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+    imagePullPolicy: Always
+    name: rust-webapp
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-w8fnm
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: minikube
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  ...
+```
+
+ここで、以下のコマンドで一度Podを削除する。
+
+```
+kubectl delete pod rust-webapp
+```
+
+次に、yamlファイルとしてmanifestを作成し、applyすることでPodを作成してみる。
+
+以下のような`rust-webapp-pod.yaml`を作成する。
+
+`rust-webapp-pod.yaml`
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rust-webapp
+spec:
+  containers:
+    - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+      name: rust-webapp
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+```
+
+作成が完了したら以下のコマンドでmanifestを流す。
+
+```
+kubectl apply -f rust-webapp-pod.yaml
+```
+
+以下のコマンドで作成されたPodのmanifestを見てみると、kubernetes側で自動的に様々な情報が付与されていることがわかる。
+
+```
+kubectl edit pod rust-webapp
+```
+
+Note: `kubectl edit`コマンドは`kubectl get -oyaml`でyamlファイルを出力し、編集後、`kubectl apply`する部分までを一気通貫で行うことができる。
+
+ここで、`kubectl exec`コマンドを使用して、Pod内でコマンドを実行してみる。
+
+```
+kubectl exec rust-webapp -- pwd
+```
+
+出力は以下のようになる。
+
+```
+/app
+```
+
+更に`-it`オプションをつけることで実行中のPodのシェルに入ることができる。
+
+```
+kubectl exec -it rust-webapp -- /bin/bash
+```
+
+最後に以下のコマンドでPodを削除する。
+
+```
+kubectl delete -f rust-webapp-pod.yaml
+```
+
+TODO: `kubectl cp`コマンドについての説明でrust-webappではtarコマンドが無くて失敗しることの説明と、代替コマンドを説明する。
+
+### Podハンズオン2
+
+KubernetesはPodを監視、異常があればPodをkillして新たにPodを再作成する。
+
+このようなPodが正常に動作しているのかどうかのヘルスチェックには、liveness probeまたはReadness probeで監視することができる。
+
+まずは以下のようなyamlファイルのmanifestを作成し、kubenetesにliveness probeの監視を適用したPodを作成する。
+
+`toggle-health-pod.yaml`
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toggle-health-app
+spec:
+  containers:
+    - image: ghcr.io/t0m0h1de/wildfly-toggle-health-app/toggle-health-app:latest
+      name: toggle-health-app
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 1
+        failureThreshold: 3
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+```
+
+上記のmanifestでPodを作成する。
+
+```
+kubectl apply -f toggle-health-pod.yaml
+```
+
+`kubectl get pod`コマンドで無事Podが作成されていることが確認できたら、ブラウザから[http://localhost:8080/health/](http://localhost:8080/health/)にアクセスし、"healthy"という文字列が表示されることを確認する。
+
+この状態で、[http://localhost:8080/health/confuse](http://localhost:8080/health/confuse)にアクセスするとPodはレスポンスコード400のレスポンスを返し、それ以降いかなるエンドポイント(URL)にアクセスしてもレスポンスコード400を返すようになる。
 
 ### Serviceハンズオン
 
@@ -139,6 +379,14 @@ kubectl config get-contexts
 ```
 minikube stop -p second-mkube
 minikube delete -p second-mkube
+```
+
+また、クラスター切り替えと同様にnamespaceの切り替えもContextで行うことができる。
+
+例えば、現在のクラスタで`novel-namespace`というnamespaceのContextに切り替えたい場合には、以下のコマンドを実行する。
+
+```
+kubectl config set-context $(kubectl config current-context) --namespace=novel-namespace
 ```
 
 TODO: kubernetes-labへの接続情報を扱うセクションを追加する
