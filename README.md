@@ -276,6 +276,73 @@ kubectl apply -f toggle-health-pod.yaml
 
 この状態で、[http://localhost:8080/health/confuse](http://localhost:8080/health/confuse)にアクセスするとPodはレスポンスコード400のレスポンスを返し、それ以降いかなるエンドポイント(URL)にアクセスしてもレスポンスコード400を返すようになる。
 
+実際に`kubectl port-forward toggle-health-app 8080:8080`を実行した状態で、上記の[http://localhost:8080/health/confuse](http://localhost:8080/health/confuse)にアクセスし、以下の`kubectl describe`コマンドを実行すると出力にヘルスチェックに失敗し、PodがKillされ、再作成されることがわかる。
+
+```
+kubectl describe pod/toggle-health-app
+```
+
+出力
+```
+...
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  ...
+  Warning  Unhealthy  60s                  kubelet            Liveness probe failed: Get "http://10.244.0.46:8080/health": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+  Warning  Unhealthy  42s (x2 over 52s)    kubelet            Liveness probe failed: HTTP probe failed with statuscode: 400
+  Normal   Killing    42s                  kubelet            Container toggle-health-app failed liveness probe, will be restarted
+  Normal   Pulling    41s (x2 over 4m21s)  kubelet            Pulling image "ghcr.io/t0m0h1de/wildfly-toggle-health-app/toggle-health-app:latest"
+  Normal   Created    39s (x2 over 4m20s)  kubelet            Created container toggle-health-app
+  Normal   Started    39s (x2 over 4m19s)  kubelet            Started container toggle-health-app
+  ...
+```
+
+この時、`kubectl get pod/toggle-health-app`コマンドを実行すると以下のようにリスタートが一回実行されたことがわかる。
+
+出力
+```
+NAME                READY   STATUS    RESTARTS        AGE
+toggle-health-app   1/1     Running   1 (3m10s ago)   6m51s
+```
+
+最後に以下のコマンドで作成したPodを削除する。
+
+```
+kubectl delete -f toggle-health-pod.yaml
+```
+
+TODO: Readness probeの説明を追加する。
+
+Podのリソース管理をするには`spec`上の`resouces`に`requests`や`limits`を記載する。
+
+`requests`にCPUやメモリについてPodが必要とするリソースを定義し、Podを作成してみる。
+
+以下のように`rust-webapp-required-resources-pod.yaml`を作成する。
+
+`rust-webapp-request-resources-pod.yaml`
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rust-webapp-required-resources
+spec:
+  containers:
+    - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+      name: rust-webapp-requred-resources
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "128Mi"
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+```
+
+`kubectl apply -f rust-webapp-request-resources-pod.yaml`でPodを作成すると、作成されるPodは0.5CPUと128MiBのメモリが割り当てられるノード上に作成される。
+
 ### Serviceハンズオン
 
 ### KubernetesのAdditionalなオブジェクト
