@@ -7,6 +7,6 @@ spec:
     - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
       name: rust-webapp
       ports:
-        - containerPort: 8080
+        - containerPort: 8000
           name: http
           protocol: TCP
