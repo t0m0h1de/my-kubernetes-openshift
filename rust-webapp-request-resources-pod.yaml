@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rust-webapp-request-resources
+spec:
+  containers:
+    - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+      name: rust-webapp-request-resources
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "128Mi"
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
