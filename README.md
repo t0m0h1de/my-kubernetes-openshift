@@ -343,6 +343,36 @@ spec:
 
 `kubectl apply -f rust-webapp-request-resources-pod.yaml`でPodを作成すると、作成されるPodは0.5CPUと128MiBのメモリが割り当てられるノード上に作成される。
 
+ここで今度は以下の`rust-webapp-limit-resource-pod.yaml`のように`requests`に加えて、`limits`を記載することで、Podの消費リソースを制限することができる。
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rust-webapp-limit-resources
+spec:
+  containers:
+    - image: ghcr.io/t0m0h1de/rust-webapp-sample/rust-webapp-sample:latest
+      name: rust-webapp-limit-resources
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "128Mi"
+        limits:
+          cpu: "1000m"
+          memory: "256Mi"
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+```
+
+`requests`がリソースの下限、`limits`がリソースの上限を設定する形となる。
+
+TODO: リソース制限はアディショナルに移動
+
+
+
 ### Serviceハンズオン
 
 ### KubernetesのAdditionalなオブジェクト
