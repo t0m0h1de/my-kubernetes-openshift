@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgresql-volume-mount
+spec:
+  containers:
+    - image: docker.io/postgresql:14
+      name: postgresql-mnt
+      ports:
+        - containerPort: 5432
+          protocol: TCP
+  volumes:
+    - name: "pg-nfs-data"
+      nfs:
+        server:
